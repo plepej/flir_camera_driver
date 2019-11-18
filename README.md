@@ -31,3 +31,17 @@ Redistributions of source code must retain the above copyright notice, this list
 Redistributions in binary form must reproduce the above copyright notice, this list of conditions and the following disclaimer in the documentation and/or other materials provided with the distribution.
 Neither the name of the Carnegie Mellon University nor the names of its contributors may be used to endorse or promote products derived from this software without specific prior written permission.
 THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+
+## Update V1
+Date: 18.11.2019
+Place: TalTech, Tallinn University of Technology
+By: Peter Lepej, AMPS, VISTION d.o.o, Partizanska ulica 24, 2310 Slovenska Bistrica
+
+Update designed for Flir BFS-PGE-31S4C-C camera, for Iseauto at TalTech, updated camera.cpp and SpinnakerCamera.cpp
+
+Added param file /params/flir_camera_params.txt with two parameters
+- disable_check_grabed_frame_incomplete: 0    # 0 - disable grabed frame, 1 - enable grabed frame checking
+- set_camera_frame_rate: 20  # 0 - disable set FPS, larger than 0 set FPS 
+
+Update in the camera.cpp
+- the FPS settiing on camera were not effective, added another pose for FPS set, including new params read to get right FPS out of camera

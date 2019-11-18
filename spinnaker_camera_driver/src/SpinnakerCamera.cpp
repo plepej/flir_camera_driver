@@ -46,8 +46,15 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <sstream>
 #include <typeinfo>
 #include <string>
+#include <fstream>
 
 #include <ros/ros.h>
+#include <ros/package.h>
+
+std::ifstream param_txt_file;
+
+bool enableFrameChecking = false;
+int settingFrameRate = 30;
 
 namespace spinnaker_camera_driver
 {
@@ -133,6 +140,57 @@ Spinnaker::GenApi::CNodePtr SpinnakerCamera::readProperty(const Spinnaker::GenIC
 
 void SpinnakerCamera::connect()
 {
+	//Try to open Camera TXT file
+	std::string param_file_path = ros::package::getPath("spinnaker_camera_driver");
+	param_txt_file.open(param_file_path + "/params/flir_camera_params.txt");
+
+	char output[100];
+	if (param_txt_file.is_open()) 
+	{
+		ROS_INFO("ReadingTXTparamFile: ");
+		std::string line;
+		int co_line = 0;
+		while (std::getline(param_txt_file, line))
+		{
+			co_line++;
+			//std::cout << line << std::endl;
+
+			size_t pos = 0;
+			pos = line.find(":")+1;
+
+			if(co_line == 1) //substract param disable_check_grabed_frame_incomplete:
+			{
+				std::string token = line.substr(pos, 4); // token is "scott"
+				//std::cout <<"result: " << token << std::endl;
+
+				//remove spaces from string
+				for(int i=0; i<token.length(); i++)
+				     if(token[i] == ' ') token.erase(i,1);
+
+				enableFrameChecking = stoi(token);
+				ROS_INFO("ReadingTXTparamFile:: disable_check_grabed_frame_incomplete: %i", enableFrameChecking);
+			}
+
+			if(co_line == 2) //substract param disable_check_grabed_frame_incomplete:
+			{
+				std::string token = line.substr(pos, 4); // token is "scott"
+				//std::cout <<"result: " << token << std::endl;
+
+				//remove spaces from string
+				for(int i=0; i<token.length(); i++)
+				     if(token[i] == ' ') token.erase(i,1);
+
+				settingFrameRate = stoi(token);
+				ROS_INFO("ReadingTXTparamFile:: set_camera_frame_rate: %i", settingFrameRate);
+			}
+		}
+	}else
+	{
+		ROS_ERROR("ReadingTXTparamFile: Error at SpinnakerCamera::connect > Cannot open file ../params/flir_camera_params.txt");	
+	}
+	param_txt_file.close();
+	
+
   if (!pCam_)
   {
     // If we have a specific camera to connect to (specified by a serial number)
@@ -330,13 +388,14 @@ void SpinnakerCamera::grabImage(sensor_msgs::Image* image, const std::string& fr
     try
     {
       Spinnaker::ImagePtr image_ptr = pCam_->GetNextImage(timeout_);
-      //  std::string format(image_ptr->GetPixelFormatName());
-      //  std::printf("\033[100m format: %s \n", format.c_str());
+      //std::string format(image_ptr->GetPixelFormatName());
+      //std::printf("\033[100m format: %s \n", format.c_str());
 
-      if (image_ptr->IsIncomplete())
+      //if (image_ptr->IsIncomplete())
+    
+      if (image_ptr->IsIncomplete() && enableFrameChecking)
       {
-        throw std::runtime_error("[SpinnakerCamera::grabImage] Image received from camera " + std::to_string(serial_) +
-                                 " is incomplete.");
+        throw std::runtime_error("[SpinnakerCamera::grabImage] Image received from camera " + std::to_string(serial_) + " is incomplete.");
       }
       else
       {

@@ -25,6 +25,13 @@ ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSI
 #include "spinnaker_camera_driver/camera.h"
 
 #include <string>
+#include <fstream>
+#include <ros/package.h>
+
+std::ifstream param_txt_file;
+
+bool enableFrameChecking = false;
+int settingFrameRate = 30;
 
 namespace spinnaker_camera_driver
 {
@@ -46,6 +53,7 @@ void Camera::init()
   //=====================================
   setMaxInt(node_map_, "DeviceLinkThroughputLimit");
 }
+
 void Camera::setFrameRate(const float frame_rate)
 {
   // This enables the "AcquisitionFrameRateEnabled"
@@ -61,6 +69,8 @@ void Camera::setFrameRate(const float frame_rate)
 
   // Finally Set the Frame Rate
   setProperty(node_map_, "AcquisitionFrameRate", frame_rate);
+
+  ROS_WARN("Minimum Frame Rate: %f Maximum Frame rate: %f Current Frame rate: %f  set frame rate: %f", ptrAcquisitionFrameRate->GetMin(), ptrAcquisitionFrameRate->GetMax(), ptrAcquisitionFrameRate->GetValue(), frame_rate);
 
   ROS_DEBUG_STREAM("Current Frame rate: \t " << ptrAcquisitionFrameRate->GetValue());
 }
@@ -156,6 +166,63 @@ void Camera::setNewConfiguration(const SpinnakerConfig& config, const uint32_t& 
         setProperty(node_map_, "BalanceRatio", static_cast<float>(config.white_balance_red_ratio));
       }
     }
+
+		//Try to open Camera TXT file
+	std::string param_file_path = ros::package::getPath("spinnaker_camera_driver");
+	param_txt_file.open(param_file_path + "/params/flir_camera_params.txt");
+
+	char output[100];
+	if (param_txt_file.is_open()) 
+	{
+		ROS_INFO("ReadingTXTparamFile: ");
+		std::string line;
+		int co_line = 0;
+		while (std::getline(param_txt_file, line))
+		{
+			co_line++;
+			//std::cout << line << std::endl;
+
+			size_t pos = 0;
+			pos = line.find(":")+1;
+
+			if(co_line == 1) //substract param disable_check_grabed_frame_incomplete:
+			{
+				std::string token = line.substr(pos, 4); // token is "scott"
+				//std::cout <<"result: " << token << std::endl;
+
+				//remove spaces from string
+				for(int i=0; i<token.length(); i++)
+				     if(token[i] == ' ') token.erase(i,1);
+
+				enableFrameChecking = stoi(token);
+				ROS_INFO("ReadingTXTparamFile:: disable_check_grabed_frame_incomplete: %i", enableFrameChecking);
+			}
+
+			if(co_line == 2) //substract param disable_check_grabed_frame_incomplete:
+			{
+				std::string token = line.substr(pos, 4); // token is "scott"
+				//std::cout <<"result: " << token << std::endl;
+
+				//remove spaces from string
+				for(int i=0; i<token.length(); i++)
+				     if(token[i] == ' ') token.erase(i,1);
+
+				settingFrameRate = stoi(token);
+				ROS_INFO("ReadingTXTparamFile:: set_camera_frame_rate: %i", settingFrameRate);
+			}
+		}
+	}else
+	{
+		ROS_ERROR("ReadingTXTparamFile: Error at SpinnakerCamera::connect > Cannot open file ../params/flir_camera_params.txt");	
+	}
+	param_txt_file.close();
+
+	//set frame rate again!
+
+	if(settingFrameRate > 0)
+	{
+		setFrameRate(static_cast<float>(settingFrameRate));
+	}
   }
   catch (const Spinnaker::Exception& e)
   {
