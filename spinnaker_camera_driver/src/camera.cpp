@@ -28,10 +28,14 @@ ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSI
 #include <fstream>
 #include <ros/package.h>
 
-std::ifstream param_txt_file;
+using namespace std;
+
+ifstream param_txt_file;
 
 bool enableFrameChecking = false;
 int settingFrameRate = 30;
+string setBalanceWhiteAuto = "Continuous";
+string setDefaultPixFormat = "BayerRG8";
 
 namespace spinnaker_camera_driver
 {
@@ -154,27 +158,14 @@ void Camera::setNewConfiguration(const SpinnakerConfig& config, const uint32_t& 
       setProperty(node_map_, "Gamma", static_cast<float>(config.gamma));
     }
 
-    // Set white balance
-    if (IsAvailable(node_map_->GetNode("BalanceWhiteAuto")))
-    {
-      setProperty(node_map_, "BalanceWhiteAuto", config.auto_white_balance);
-      if (config.auto_white_balance.compare(std::string("Off")) == 0)
-      {
-        setProperty(node_map_, "BalanceRatioSelector", "Blue");
-        setProperty(node_map_, "BalanceRatio", static_cast<float>(config.white_balance_blue_ratio));
-        setProperty(node_map_, "BalanceRatioSelector", "Red");
-        setProperty(node_map_, "BalanceRatio", static_cast<float>(config.white_balance_red_ratio));
-      }
-    }
-
-		//Try to open Camera TXT file
+	//Try to open Camera TXT file
 	std::string param_file_path = ros::package::getPath("spinnaker_camera_driver");
 	param_txt_file.open(param_file_path + "/params/flir_camera_params.txt");
 
 	char output[100];
 	if (param_txt_file.is_open()) 
 	{
-		ROS_INFO("ReadingTXTparamFile: ");
+		ROS_INFO("ReadingTXTparamFile: .../flir_camera_driver/params/flir_camera_params.txt ");
 		std::string line;
 		int co_line = 0;
 		while (std::getline(param_txt_file, line))
@@ -187,7 +178,7 @@ void Camera::setNewConfiguration(const SpinnakerConfig& config, const uint32_t& 
 
 			if(co_line == 1) //substract param disable_check_grabed_frame_incomplete:
 			{
-				std::string token = line.substr(pos, 4); // token is "scott"
+				string token = line.substr(pos, 4); 
 				//std::cout <<"result: " << token << std::endl;
 
 				//remove spaces from string
@@ -195,12 +186,13 @@ void Camera::setNewConfiguration(const SpinnakerConfig& config, const uint32_t& 
 				     if(token[i] == ' ') token.erase(i,1);
 
 				enableFrameChecking = stoi(token);
-				ROS_INFO("ReadingTXTparamFile:: disable_check_grabed_frame_incomplete: %i", enableFrameChecking);
+				//ROS_INFO("ReadingTXTparamFile:: disable_check_grabed_frame_incomplete: %i", enableFrameChecking);
+				cout << "ReadingTXTparamFile:: disable_check_grabed_frame_incomplete: "<< enableFrameChecking << endl;
 			}
 
 			if(co_line == 2) //substract param disable_check_grabed_frame_incomplete:
 			{
-				std::string token = line.substr(pos, 4); // token is "scott"
+				string token = line.substr(pos, 4); 
 				//std::cout <<"result: " << token << std::endl;
 
 				//remove spaces from string
@@ -208,7 +200,36 @@ void Camera::setNewConfiguration(const SpinnakerConfig& config, const uint32_t& 
 				     if(token[i] == ' ') token.erase(i,1);
 
 				settingFrameRate = stoi(token);
-				ROS_INFO("ReadingTXTparamFile:: set_camera_frame_rate: %i", settingFrameRate);
+				//ROS_INFO("ReadingTXTparamFile:: set_camera_frame_rate: %i", settingFrameRate);
+				cout <<"ReadingTXTparamFile:: set_camera_frame_rate: " << settingFrameRate << endl;
+			}
+
+			if(co_line == 3) //substract param set_balance_white_auto:
+			{
+				string token = line.substr(pos, 12); 
+				//std::cout <<"result: " << token << std::endl;
+
+				//remove spaces from string
+				for(int i=0; i<token.length(); i++)
+				     if(token[i] == ' ') token.erase(i,1);
+
+				setBalanceWhiteAuto = token;
+
+				cout <<"ReadingTXTparamFile:: set_balance_white_auto: " << setBalanceWhiteAuto << endl;
+				//ROS_INFO("ReadingTXTparamFile:: set_balance_white_auto: %s", setBalanceWhiteAuto);
+			}
+
+			if(co_line == 4) //substract param set_default_pix_format:
+			{
+				string token = line.substr(pos, 12); 
+				//std::cout <<"result: " << token << std::endl;
+
+				//remove spaces from string
+				for(int i=0; i<token.length(); i++)
+				     if(token[i] == ' ') token.erase(i,1);
+
+				setDefaultPixFormat = token;
+				cout <<"ReadingTXTparamFile:: set_default_pix_format: " << setDefaultPixFormat << endl;
 			}
 		}
 	}else
@@ -216,6 +237,21 @@ void Camera::setNewConfiguration(const SpinnakerConfig& config, const uint32_t& 
 		ROS_ERROR("ReadingTXTparamFile: Error at SpinnakerCamera::connect > Cannot open file ../params/flir_camera_params.txt");	
 	}
 	param_txt_file.close();
+
+    // Set white balance
+    if (IsAvailable(node_map_->GetNode("BalanceWhiteAuto")))
+    {
+
+      setProperty(node_map_, "BalanceWhiteAuto", setBalanceWhiteAuto);
+      //setProperty(node_map_, "BalanceWhiteAuto", config.auto_white_balance);
+      if (config.auto_white_balance.compare(std::string("Off")) == 0)
+      {
+        setProperty(node_map_, "BalanceRatioSelector", "Blue");
+        setProperty(node_map_, "BalanceRatio", static_cast<float>(config.white_balance_blue_ratio));
+        setProperty(node_map_, "BalanceRatioSelector", "Red");
+        setProperty(node_map_, "BalanceRatio", static_cast<float>(config.white_balance_red_ratio));
+      }
+    }
 
 	//set frame rate again!
 
@@ -275,7 +311,10 @@ void Camera::setImageControlFormats(const spinnaker_camera_driver::SpinnakerConf
   setProperty(node_map_, "OffsetY", config.image_format_y_offset);
 
   // Set Pixel Format
-  setProperty(node_map_, "PixelFormat", config.image_format_color_coding);
+  setProperty(node_map_, "PixelFormat", setDefaultPixFormat);
+  //setProperty(node_map_, "PixelFormat", config.image_format_color_coding);
+  //std::cout <<"Camera format: "<<config.image_format_color_coding << std::endl;
+	
 }
 
 void Camera::setGain(const float& gain)

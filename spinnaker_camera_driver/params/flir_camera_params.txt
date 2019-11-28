@@ -1,3 +1,4 @@
-disable_check_grabed_frame_incomplete: 0    # 0 - disable grabed frame, 1 - enable grabed frame checking
-set_camera_frame_rate: 20  # 0 - disable set FPS, larger than 0 set FPS 
-
+disable_check_grabed_frame_incomplete: 0            # 0 - disable grabed frame, 1 - enable grabed frame checking
+set_camera_frame_rate: 20                           # 0 - disable set FPS, larger than 0 set FPS 
+set_balance_white_auto: Continuous                  # Continuous - recomended (auto), Off - need to set red and blue white balance, Once - only setting once
+set_default_pix_format: BayerRG8                    # Mono8 - grayscale, RGB8Packed - RGB format - debyering done on camera (if use this need to disable debyering on client), BayerRG8 - RGB format - debyering done on client

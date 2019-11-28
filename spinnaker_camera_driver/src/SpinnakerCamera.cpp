@@ -51,7 +51,9 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <ros/ros.h>
 #include <ros/package.h>
 
-std::ifstream param_txt_file;
+using namespace std;
+
+ifstream param_txt_file;
 
 bool enableFrameChecking = false;
 int settingFrameRate = 30;
@@ -147,7 +149,7 @@ void SpinnakerCamera::connect()
 	char output[100];
 	if (param_txt_file.is_open()) 
 	{
-		ROS_INFO("ReadingTXTparamFile: ");
+		//ROS_INFO("ReadingTXTparamFile: ");
 		std::string line;
 		int co_line = 0;
 		while (std::getline(param_txt_file, line))
@@ -160,7 +162,7 @@ void SpinnakerCamera::connect()
 
 			if(co_line == 1) //substract param disable_check_grabed_frame_incomplete:
 			{
-				std::string token = line.substr(pos, 4); // token is "scott"
+				string token = line.substr(pos, 4); // token is "scott"
 				//std::cout <<"result: " << token << std::endl;
 
 				//remove spaces from string
@@ -168,21 +170,10 @@ void SpinnakerCamera::connect()
 				     if(token[i] == ' ') token.erase(i,1);
 
 				enableFrameChecking = stoi(token);
-				ROS_INFO("ReadingTXTparamFile:: disable_check_grabed_frame_incomplete: %i", enableFrameChecking);
+				//ROS_INFO("ReadingTXTparamFile:: disable_check_grabed_frame_incomplete: %i", enableFrameChecking);
+				//cout << "ReadingTXTparamFile:: disable_check_grabed_frame_incomplete: "<< enableFrameChecking << endl;
 			}
 
-			if(co_line == 2) //substract param disable_check_grabed_frame_incomplete:
-			{
-				std::string token = line.substr(pos, 4); // token is "scott"
-				//std::cout <<"result: " << token << std::endl;
-
-				//remove spaces from string
-				for(int i=0; i<token.length(); i++)
-				     if(token[i] == ' ') token.erase(i,1);
-
-				settingFrameRate = stoi(token);
-				ROS_INFO("ReadingTXTparamFile:: set_camera_frame_rate: %i", settingFrameRate);
-			}
 		}
 	}else
 	{
@@ -451,7 +442,8 @@ void SpinnakerCamera::grabImage(sensor_msgs::Image* image, const std::string& fr
             // 8 Bits per Pixel
             if (color_filter_str.compare(bayer_rg_str) == 0)
             {
-              imageEncoding = sensor_msgs::image_encodings::BAYER_RGGB8;
+              imageEncoding = sensor_msgs::image_encodings::BAYER_RGGB8;        //BAYER_RGGB8;//sensor_msgs::image_encodings::BAYER_RGGB8
+		//ROS_INFO("Image ENCODINGS: BAYER_RGGB8");
             }
             else if (color_filter_str.compare(bayer_gr_str) == 0)
             {
@@ -491,8 +483,56 @@ void SpinnakerCamera::grabImage(sensor_msgs::Image* image, const std::string& fr
         int height = image_ptr->GetHeight();
         int stride = image_ptr->GetStride();
 
-        // ROS_INFO_ONCE("\033[93m wxh: (%d, %d), stride: %d \n", width, height, stride);
+        //ROS_INFO("\033[93m wxh: (%d, %d), stride: %d \n", width, height, stride);
         fillImage(*image, imageEncoding, height, width, stride, image_ptr->GetData());
+
+//TRY CV_COPY
+/*
+    "mono8"
+    "bgr8"
+    "bgra8"
+    "rgb8"
+    "rgba8"
+    "mono16"
+*/
+
+//https://answers.ros.org/question/225782/convert-cv_bridge-image-to-cvmat-image/
+/*   cv_bridge::CvImagePtr cv_img_raw = cv_bridge::toCvCopy(*image);
+     double min = 0;
+     double max = 1000;
+	cv::Mat img_scaled_8u;
+	cv::Mat img_out;
+	cv::Mat(cv_img_raw->image).convertTo(img_scaled_8u, CV_8UC3, 255. / (max - min));
+	//cv::cvtColor(img_scaled_8u, img_out, CV_GRAY2RGB);
+cv::imshow("img_scaled_8u", img_scaled_8u);
+cv::waitKey(1);
+*/
+/*
+	if (color_filter_str.compare(bayer_rg_str) == 0)
+	{
+		ROS_INFO("Image Byer_RG8 conversion: Start -- IN img enc: %s", image->encoding );
+
+		//try to convert again
+		cv_bridge::CvImagePtr cv_ptr;
+		cv_ptr = cv_bridge::toCvCopy(*image, sensor_msgs::image_encodings::RGB8);
+		//NOT: BGR8, RGB8
+
+		ROS_INFO("Image Byer_RG8 conversion: Convert to ... finished!");
+
+		//copy back to img
+		cv_ptr->toImageMsg(*image);
+		ROS_INFO("Image Byer_RG8 conversion: Copy back to *image finished!");
+
+		//CONVERSION RGB - XXX
+		cv_bridge::CvImagePtr cv_ptr2;
+		cv_ptr2 = cv_bridge::toCvCopy(*image, sensor_msgs::image_encodings::BGR8);
+
+		//copy back to img
+		cv_ptr2->toImageMsg(*image);
+		ROS_INFO("Image Byer_RG8 conversion: Second CONV finished!");
+	}
+*/
+
         image->header.frame_id = frame_id;
       }  // end else
     }

@@ -47,6 +47,7 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <sensor_msgs/image_encodings.h>  // ROS header for the different supported image encoding types
 #include <sensor_msgs/fill_image.h>
 #include <spinnaker_camera_driver/camera_exceptions.h>
+#include <cv_bridge/cv_bridge.h>
 
 #include <sstream>
 #include <mutex>
